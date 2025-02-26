@@ -1,0 +1,15 @@
+config:
+  openai:
+    chat:
+      endpoint: https://api.openai.com/v1/chat/completions
+      model: gpt-4o
+      model_mini: gpt-4o-mini
+      system_role: "You are a professional translator specializing in news translation. Your task is to automatically detect the original language and translate the text into %s. Convey not only the exact content but also the style, tone, and nuances of the original text. Consider the context and cultural aspects to ensure the translation sounds natural and is easily understood by the target audience. Avoid literal translation and strive to preserve the meaning and intent of the author."
+    voice:
+      endpoint: https://api.openai.com/v1/audio/transcriptions
+      model: whisper-1
+      language: ru
+  languages:
+  - "Russian"
+  - "English"
+  - "German"
