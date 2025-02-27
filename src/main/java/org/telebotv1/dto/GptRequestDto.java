@@ -12,9 +12,9 @@ public class GptRequestDto {
     private String model;
     private List<Message> messages;
 
-    private double temperature = 0.7;
-    private int max_tokens = 100;
-    private int n = 1;
+//    private double temperature = 0.7;
+//    private int max_tokens = 100;
+//    private int n = 1;
 
     @Builder
     @Getter
