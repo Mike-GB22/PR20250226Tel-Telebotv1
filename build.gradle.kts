@@ -16,6 +16,7 @@ dependencies {
     implementation ("org.springframework.boot:spring-boot-starter-web")
     implementation ("org.telegram:telegrambots:6.9.7.1")
     implementation ("org.projectlombok:lombok")
+    implementation ("org.slf4j:slf4j-api")
     annotationProcessor ("org.projectlombok:lombok")
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
@@ -23,4 +24,7 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+tasks.withType<JavaCompile>().configureEach {
+    options.encoding = "UTF-8"
 }
