@@ -1,8 +1,10 @@
 package org.telebotv1.client;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -15,6 +17,7 @@ import org.telebotv1.dto.GptResponseDto;
 
 import java.util.List;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class OpenAiClient {
@@ -52,7 +55,7 @@ public class OpenAiClient {
     private String defaultLanguage;
 
     private final RestTemplate restTemplate;
-//    private final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
     public String makePromptRequest(String userPrompt) {
         return makePromptRequest(userPrompt, String.format(systemRole, defaultLanguage));
@@ -64,7 +67,7 @@ public class OpenAiClient {
 //                .append("Model: ").append(chatModel)
 //                .append(sendPromptRequestToChatApi(userPrompt, systemPrompt, chatModel));
         stringBuilder
-                .append("Model: ").append(chatModelMini)
+                .append("Model: *").append(chatModelMini).append("*\n")
                 .append(sendPromptRequestToChatApi(userPrompt, systemPrompt, chatModelMini));
         return stringBuilder.toString();
     }
@@ -76,11 +79,14 @@ public class OpenAiClient {
         ResponseEntity<String> responseEntity = restTemplate.postForEntity(chatApiUrl, request, String.class);
         String responseString = responseEntity.getBody();
         System.out.println("responseString from restTemplate: " + responseString);
-//        GptResponseDto responseDto;
-//        try {
-//            responseDto =
-//        }
-        return responseString;
+        String response = responseString;
+        try {
+            GptResponseDto responseDto = objectMapper.readValue(responseString, GptResponseDto.class);
+            response = responseDto.getMessage();
+        } catch (IllegalStateException | JsonProcessingException e) {
+            log.error("JSON to GptResponseDto: {},/n{}", e.getMessage(), e.getStackTrace());
+        }
+        return response;
     }
 
     private HttpHeaders getHttpHeaders() {

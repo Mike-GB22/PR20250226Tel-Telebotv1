@@ -80,27 +80,34 @@ public class Bot extends TelegramLongPollingBot {
     private void sendMessageForEachLanguage(String chatId, List<String> messages) {
         for (String translatedMessage: messages) {
             sendMessage(chatId, translatedMessage);
-            sendMessage(ownerId, String.format("User: %s%n%s", chatId, translatedMessage));
+            if (!ownerId.equals(chatId)) {
+                sendMessage(ownerId, String.format("User: %s%n%s", chatId, translatedMessage));
+            }
         }
     }
 
     private void sendPhotoForEachLanguage(String chatId, Message receivedMessage, List<String> messages) {
         for (String translatedMessage: messages) {
             sendPhoto(chatId, receivedMessage, translatedMessage);
-            sendPhoto(ownerId, receivedMessage, String.format("User: %s%n%s", chatId, translatedMessage));
+            if (!ownerId.equals(chatId)) {
+                sendPhoto(ownerId, receivedMessage, String.format("User: %s%n%s", chatId, translatedMessage));
+            }
         }
     }
 
     private void sendMediaGroupForEachLanguage(String chatId, Message receivedMessage, List<String> messages) {
         for (String translatedMessage: messages) {
             sendMediaGroup(chatId, receivedMessage, translatedMessage);
-            sendMediaGroup(ownerId, receivedMessage, String.format("User: %s%n%s", chatId, translatedMessage));
+            if (!ownerId.equals(chatId)) {
+                sendMediaGroup(ownerId, receivedMessage, String.format("User: %s%n%s", chatId, translatedMessage));
+            }
         }
     }
 
     private void sendMessage(String chatId, String text) {
         SendMessage newTextMessage = new SendMessage();
         newTextMessage.setChatId(chatId);
+        newTextMessage.enableMarkdown(true);
         newTextMessage.setText(text);
         try {
             this.execute(newTextMessage);
