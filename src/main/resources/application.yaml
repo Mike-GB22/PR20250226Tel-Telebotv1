@@ -5,6 +5,8 @@ spring:
      - optional:file:./config/telegram.yaml
      - optional:file:./config/openai.yaml
 
-  logging:
-    level:
-      org.springframework.boot.context.config: DEBUG
+logging:
+  level:
+    org.springframework.boot.context.config: INFO
+    root: INFO
+    org.example: DEBUG

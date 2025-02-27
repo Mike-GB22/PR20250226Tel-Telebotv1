@@ -11,6 +11,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.telebotv1.dto.GptRequestDto;
 import org.telebotv1.dto.GptResponseDto;
@@ -47,6 +48,10 @@ public class OpenAiClient {
     @Value("${config.openai.voice.language}")
     private String language;
 
+    @Getter
+    @Value("${config.openai.delay}")
+    private int delay;
+
 //    @Getter
 //    @Value("${config.openai.chat.languages}")
 //    private List<String> translateToLanguages;
@@ -73,18 +78,22 @@ public class OpenAiClient {
     }
 
     private String sendPromptRequestToChatApi(String userPrompt, String systemPrompt, String currentChatModel) {
+        String response = "Server error";
         HttpHeaders headers = getHttpHeaders();
         GptRequestDto body = getGptRequest(userPrompt, systemPrompt, currentChatModel);
         HttpEntity<GptRequestDto> request = new HttpEntity<>(body, headers);
-        ResponseEntity<String> responseEntity = restTemplate.postForEntity(chatApiUrl, request, String.class);
-        String responseString = responseEntity.getBody();
-        System.out.println("responseString from restTemplate: " + responseString);
-        String response = responseString;
         try {
+            log.info("Request HttpEntity to restTemplate: \n{}", objectMapper.writeValueAsString(request.getBody()));
+            ResponseEntity<String> responseEntity = restTemplate.postForEntity(chatApiUrl, request, String.class);
+            String responseString = responseEntity.getBody();
+            log.info("ResponseString from restTemplate: \n{}", responseString);
+            response = responseString;
+
             GptResponseDto responseDto = objectMapper.readValue(responseString, GptResponseDto.class);
             response = responseDto.getMessage();
-        } catch (IllegalStateException | JsonProcessingException e) {
+        } catch (IllegalStateException | JsonProcessingException | HttpClientErrorException e) {
             log.error("JSON to GptResponseDto: {},/n{}", e.getMessage(), e.getStackTrace());
+            response += "\n" +e.getMessage();
         }
         return response;
     }
@@ -103,11 +112,11 @@ public class OpenAiClient {
                 .messages(
                         List.of(
                                 GptRequestDto.Message.builder()
-                                        .role("system")
+                                        .role(GptRequestDto.Role.SYSTEM)
                                         .content(systemPrompt)
                                         .build(),
                                 GptRequestDto.Message.builder()
-                                        .role("user")
+                                        .role(GptRequestDto.Role.USER)
                                         .content(userPrompt)
                                         .build()))
                 .build();

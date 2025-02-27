@@ -163,6 +163,7 @@ public class Bot extends TelegramLongPollingBot {
         if (!mediaList.isEmpty()) {
             mediaList.get(0).setCaption(text);
         }
+        mediaList = mediaList.stream().limit(10).toList();
         newMediaMessage.setMedias(mediaList);
 
         try {
