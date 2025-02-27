@@ -52,7 +52,7 @@ public class OpenAiClient {
     private String defaultLanguage;
 
     private final RestTemplate restTemplate;
-    //private final ObjectMapper objectMapper;
+//    private final ObjectMapper objectMapper;
 
     public String makePromptRequest(String userPrompt) {
         return makePromptRequest(userPrompt, String.format(systemRole, defaultLanguage));
@@ -76,10 +76,10 @@ public class OpenAiClient {
         ResponseEntity<String> responseEntity = restTemplate.postForEntity(chatApiUrl, request, String.class);
         String responseString = responseEntity.getBody();
         System.out.println("responseString from restTemplate: " + responseString);
-        GptResponseDto responseDto;
-        try {
-            responseDto =
-        }
+//        GptResponseDto responseDto;
+//        try {
+//            responseDto =
+//        }
         return responseString;
     }
 
