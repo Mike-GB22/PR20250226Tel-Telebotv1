@@ -52,9 +52,8 @@ public class Bot extends TelegramLongPollingBot {
     }
 
     @PostConstruct
-    public void printSecrets() {
-        System.out.println(" TelegramBot name is: @" + name);
-        System.out.println(" Owner ID is: " + ownerId);
+    public void printInfo() {
+        log.info("\n TelegramBot name is: @{}\n Owner ID is: {}", name, ownerId);
     }
 
     @Override
