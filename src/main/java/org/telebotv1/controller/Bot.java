@@ -6,19 +6,23 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telebotv1.service.TranslatorService;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.api.methods.send.SendMediaGroup;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.objects.File;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.PhotoSize;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.Video;
+import org.telegram.telegrambots.meta.api.objects.Voice;
 import org.telegram.telegrambots.meta.api.objects.media.InputMedia;
 import org.telegram.telegrambots.meta.api.objects.media.InputMediaPhoto;
 import org.telegram.telegrambots.meta.api.objects.media.InputMediaVideo;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,6 +37,9 @@ public class Bot extends TelegramLongPollingBot {
 
     @Value("${secrets.telegram.ownerId}")
     private String ownerId;
+
+    @Value("${secrets.telegram.token}")
+    private String token;
 
     public Bot (@Value("${secrets.telegram.token}") String token, TranslatorService translator) {
         super(token);
@@ -65,6 +72,44 @@ public class Bot extends TelegramLongPollingBot {
                     sendPhotoForEachLanguage(chatId, recivedMessage, messages);
                 } else {
                     sendMediaGroupForEachLanguage(chatId, recivedMessage, messages);
+                }
+            } else if (recivedMessage.hasVoice()) {
+                Voice recievedVoice = update.getMessage().getVoice();
+                System.out.println("recievedVoice: " + recievedVoice);
+                String fileId = recievedVoice.getFileId();
+                System.out.println("fileId: " + fileId);
+                GetFile getVoiceFileRequest = new GetFile();
+                getVoiceFileRequest.setFileId(fileId);
+
+                java.io.File audioFile;
+                String transcribtedText = null;
+                try {
+                    File voiceTeleFile = this.execute(getVoiceFileRequest);
+                    System.out.println("File: " + voiceTeleFile);
+                    System.out.println("FileURL: " + voiceTeleFile.getFileUrl(token));
+                    System.out.println("FilePath: " + voiceTeleFile.getFilePath());
+
+                    audioFile = this.downloadFile(voiceTeleFile.getFilePath());
+                    System.out.println("audioFile: " + audioFile);
+                    System.out.println("audioFile.getAbsolutePath(): " + audioFile.getAbsolutePath());
+                    System.out.println("audioFile.getAbsoluteFile(): " + audioFile.getAbsoluteFile());
+                    System.out.println("audioFile.toURI(): " + audioFile.toURI());
+                    System.out.println("audioFile.getCanonicalPath(): " + audioFile.getCanonicalPath());
+                    System.out.println("audioFile.getName(): " + audioFile.getName());
+
+                    transcribtedText = translatorService.transcribe(audioFile);
+                    System.out.println("transcribtedText: " + transcribtedText);
+                    System.out.println();
+
+                } catch (TelegramApiException e) {
+                    log.error("Voice. Get and Download file. \n{}\nStack: {}", e.getMessage(), e.getStackTrace());
+                } catch (IOException e) {
+                    log.error("Voice. IOException. \n{}\nStack: {}", e.getMessage(), e.getStackTrace());
+                }
+
+                if (null != transcribtedText && !transcribtedText.isBlank()) {
+                    List<String> messages = translateOneTextToManyLanguages(transcribtedText);
+                    sendMessageForEachLanguage(chatId, messages);
                 }
             }
         }

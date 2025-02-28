@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.telebotv1.client.OpenAiClient;
 
+import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -17,8 +18,8 @@ public class TranslatorService {
     public List<String> translate(String message) {
         String systemPrompt = openAiClient.getSystemRole();
         //List<String> languages = openAiClient.getTranslateToLanguages();
-        //List<String> languages = List.of("Russian", "English", "German", "Spanish", "Italian", "Arabic", "Serbian", "Ukrainian");
-        List<String> languages = List.of("Russian", "English", "German");
+        List<String> languages = List.of("Russian", "English", "German", "Spanish", "Italian", "Arabic", "Serbian", "Ukrainian");
+        //List<String> languages = List.of("Russian", "English", "German");
 
         List<String> translated = new LinkedList<>();
         translated.add("Original: \n" + message);
@@ -36,5 +37,14 @@ public class TranslatorService {
         } catch (InterruptedException e) {
             log.error("Translate was interrupted.\n{}", e.getMessage());
         }
+    }
+
+    public String transcribe(File file) {
+        File newFileName = new File(file.getAbsolutePath() + ".ogg");
+        if (file.renameTo(newFileName)) {
+            return openAiClient.transcribe(newFileName);
+        }
+        log.error("Translate. File wasn't rename to .ogg.");
+        return "";
     }
 }

@@ -6,16 +6,21 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.telebotv1.dto.GptRequestDto;
 import org.telebotv1.dto.GptResponseDto;
+import org.telebotv1.dto.VoiceTranscriptionDto;
 
+import java.io.File;
 import java.util.List;
 
 @Slf4j
@@ -43,10 +48,10 @@ public class OpenAiClient {
     private String transcriptionApiUrl;
 
     @Value("${config.openai.voice.model}")
-    private String voiceMode;
+    private String voiceModel;
 
     @Value("${config.openai.voice.language}")
-    private String language;
+    private String voiceLanguage;
 
     @Getter
     @Value("${config.openai.delay}")
@@ -79,12 +84,14 @@ public class OpenAiClient {
 
     private String sendPromptRequestToChatApi(String userPrompt, String systemPrompt, String currentChatModel) {
         String response = "Server error";
-        HttpHeaders headers = getHttpHeaders();
+
+        HttpHeaders headers = getHttpHeaders(MediaType.APPLICATION_JSON);
         GptRequestDto body = getGptRequest(userPrompt, systemPrompt, currentChatModel);
         HttpEntity<GptRequestDto> request = new HttpEntity<>(body, headers);
         try {
             log.info("Request HttpEntity to restTemplate: \n{}", objectMapper.writeValueAsString(request.getBody()));
             ResponseEntity<String> responseEntity = restTemplate.postForEntity(chatApiUrl, request, String.class);
+            log.info("ResponseString from restEntity: \n{}", responseEntity);
             String responseString = responseEntity.getBody();
             log.info("ResponseString from restTemplate: \n{}", responseString);
             response = responseString;
@@ -98,9 +105,9 @@ public class OpenAiClient {
         return response;
     }
 
-    private HttpHeaders getHttpHeaders() {
+    private HttpHeaders getHttpHeaders(MediaType contentType) {
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setContentType(contentType);
         headers.setBearerAuth(apiKey);
 
         return headers;
@@ -120,5 +127,38 @@ public class OpenAiClient {
                                         .content(userPrompt)
                                         .build()))
                 .build();
+    }
+
+    public String transcribe (File audioFile) {
+        String response = "Server error";
+        HttpHeaders headers = getHttpHeaders(MediaType.MULTIPART_FORM_DATA);
+        MultiValueMap<String, Object> body = getVoiceRequest(audioFile);
+        HttpEntity<MultiValueMap<String, Object>> request = new HttpEntity<>(body, headers);
+        try {
+            //log.info("Request HttpEntity to restTemplate: \n{}", objectMapper.writeValueAsString(request.getBody()));
+            ResponseEntity<String> responseEntity = restTemplate.postForEntity(transcriptionApiUrl, request, String.class);
+            log.info("ResponseString from restEntity: \n{}", responseEntity);
+            String responseString = responseEntity.getBody();
+            log.info("ResponseString from restTemplate: \n{}", responseString);
+            VoiceTranscriptionDto transcriptionDto = objectMapper.readValue(responseString, VoiceTranscriptionDto.class);
+            response = transcriptionDto.text();
+
+        } catch (JsonProcessingException e) {
+            log.error("JsonProcessingException transcribe: \n{}", e.getMessage());
+            response += "\n" + e.getMessage();
+        }
+
+        return response;
+    }
+
+    private MultiValueMap<String, Object> getVoiceRequest(File file) {
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("model", voiceModel);
+        body.add("language", voiceLanguage);
+
+        FileSystemResource fileResource = new FileSystemResource(file);
+        body.add("file", fileResource);
+
+        return body;
     }
 }
