@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.telebotv1.client.OpenAiClient;
+import org.telebotv1.config.OpenAiConfig;
 
 import java.io.File;
 import java.util.LinkedList;
@@ -14,12 +15,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TranslatorService {
     private final OpenAiClient openAiClient;
+    private final OpenAiConfig openAiConfig;
 
     public List<String> translate(String message) {
-        String systemPrompt = openAiClient.getSystemRole();
-        //List<String> languages = openAiClient.getTranslateToLanguages();
-        List<String> languages = List.of("Russian", "English", "German", "Spanish", "Italian", "Arabic", "Serbian", "Ukrainian");
-        //List<String> languages = List.of("Russian", "English", "German");
+        String systemPrompt = openAiConfig.getSystemRole();
+        List<String> languages = openAiConfig.getTranslateToLanguages();
+        //List<String> languages = List.of("Russian", "English", "German", "Spanish", "Italian", "Arabic", "Serbian", "Ukrainian");
 
         List<String> translated = new LinkedList<>();
         translated.add("Original: \n" + message);
@@ -33,7 +34,7 @@ public class TranslatorService {
 
     private void delay() {
         try {
-            Thread.sleep(openAiClient.getDelay());
+            Thread.sleep(openAiConfig.getDelay());
         } catch (InterruptedException e) {
             log.error("Translate was interrupted.\n{}", e.getMessage());
         }

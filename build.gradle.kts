@@ -17,6 +17,7 @@ dependencies {
     implementation ("org.telegram:telegrambots:6.9.7.1")
     implementation ("org.projectlombok:lombok")
     implementation ("org.slf4j:slf4j-api")
+    implementation ("org.springframework.boot:spring-boot-starter-validation")
     annotationProcessor ("org.projectlombok:lombok")
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
