@@ -54,6 +54,6 @@ public class OpenAiConfig {
     @PostConstruct
     public void postConstructor() {
         translateToLanguages = languagesListConfig.getLanguages();
-        log.info("\n translateToLanguages: {}", translateToLanguages);
+        log.info("\n (i) translateToLanguages: {}", translateToLanguages);
     }
 }
