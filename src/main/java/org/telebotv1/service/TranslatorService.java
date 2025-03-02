@@ -18,16 +18,18 @@ public class TranslatorService {
     private final OpenAiConfig openAiConfig;
 
     public List<String> translate(String message) {
-        String systemPrompt = openAiConfig.getSystemRole();
-        List<String> languages = openAiConfig.getTranslateToLanguages();
-        //List<String> languages = List.of("Russian", "English", "German", "Spanish", "Italian", "Arabic", "Serbian", "Ukrainian");
-
         List<String> translated = new LinkedList<>();
-        translated.add("Original: \n" + message);
-        for (String language : languages) {
-            String response = openAiClient.makePromptRequest(message, String.format(systemPrompt, language));
-            translated.add(language + "\n" + response);
-            delay();
+        if (null != message && !message.isBlank()) {
+            String systemPrompt = openAiConfig.getSystemRole();
+            List<String> languages = openAiConfig.getTranslateToLanguages();
+            //List<String> languages = List.of("Russian", "English", "German", "Spanish", "Italian", "Arabic", "Serbian", "Ukrainian");
+
+            translated.add("Original: \n" + message);
+            for (String language : languages) {
+                String response = openAiClient.makePromptRequest(message, String.format(systemPrompt, language));
+                translated.add(language + "\n" + response);
+                delay();
+            }
         }
         return translated;
     }

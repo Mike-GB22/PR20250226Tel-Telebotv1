@@ -4,6 +4,8 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.telebotv1.config.TelegramConfig;
+import org.telebotv1.controller.command.Command;
 import org.telebotv1.service.TranslatorService;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.GetFile;
@@ -30,98 +32,44 @@ import java.util.List;
 @Component
 public class Bot extends TelegramLongPollingBot {
 
-    private final TranslatorService translatorService;
+    private final TelegramConfig telegramConfig;
+    private final List<Command> commands;
 
-    @Value("${secrets.telegram.name:NOT_FOUND}")
-    private String name;
+    private final String botName;
+    private final String ownerId;
 
-    @Value("${secrets.telegram.ownerId}")
-    private String ownerId;
 
-    @Value("${secrets.telegram.token}")
-    private String token;
+    public Bot (TelegramConfig telegramConfig,
+                List<Command> commands) {
+        super(telegramConfig.getToken());
+        this.telegramConfig = telegramConfig;
+        this.commands = commands;
 
-    public Bot (@Value("${secrets.telegram.token}") String token, TranslatorService translator) {
-        super(token);
-        translatorService = translator;
+        botName = telegramConfig.getName();
+        ownerId = telegramConfig.getOwnerId();
+
     }
 
     @Override
     public String getBotUsername() {
-        return name;
+        return botName;
     }
 
     @PostConstruct
     public void printInfo() {
-        log.info("\n TelegramBot name is: @{}\n Owner ID is: {}", name, ownerId);
+        log.info("\n (i) TelegramBot name is: @{}\n (i) Owner ID is: {}", botName, ownerId);
     }
 
     @Override
     public void onUpdateReceived(Update update) {
+        log.info("\n (i) Was Update received: {}", update);
         if (update.hasMessage()) {
-            Message recivedMessage = update.getMessage();
-            String chatId = recivedMessage.getChatId().toString();
-            //String userName = message.getFrom().toString();
-            if (recivedMessage.hasText()) {
-                List<String> messages = translateOneTextToManyLanguages(recivedMessage.getText());
-                sendMessageForEachLanguage(chatId, messages);
-            } else if (recivedMessage.hasPhoto() || recivedMessage.hasVideo()) {
-                List<String> messages = translateOneTextToManyLanguages(recivedMessage.getCaption());
-                if (recivedMessage.hasPhoto() && recivedMessage.hasVideo()) {
-                    sendPhotoForEachLanguage(chatId, recivedMessage, messages);
-                } else {
-                    sendMediaGroupForEachLanguage(chatId, recivedMessage, messages);
-                }
-            } else if (recivedMessage.hasVoice()) {
-                Voice recievedVoice = update.getMessage().getVoice();
-                System.out.println("recievedVoice: " + recievedVoice);
-                String fileId = recievedVoice.getFileId();
-                System.out.println("fileId: " + fileId);
-                GetFile getVoiceFileRequest = new GetFile();
-                getVoiceFileRequest.setFileId(fileId);
-
-                java.io.File audioFile;
-                String transcribtedText = null;
-                try {
-                    File voiceTeleFile = this.execute(getVoiceFileRequest);
-                    System.out.println("File: " + voiceTeleFile);
-                    System.out.println("FileURL: " + voiceTeleFile.getFileUrl(token));
-                    System.out.println("FilePath: " + voiceTeleFile.getFilePath());
-
-                    audioFile = this.downloadFile(voiceTeleFile.getFilePath());
-                    System.out.println("audioFile: " + audioFile);
-                    System.out.println("audioFile.getAbsolutePath(): " + audioFile.getAbsolutePath());
-                    System.out.println("audioFile.getAbsoluteFile(): " + audioFile.getAbsoluteFile());
-                    System.out.println("audioFile.toURI(): " + audioFile.toURI());
-                    System.out.println("audioFile.getCanonicalPath(): " + audioFile.getCanonicalPath());
-                    System.out.println("audioFile.getName(): " + audioFile.getName());
-
-                    transcribtedText = translatorService.transcribe(audioFile);
-                    System.out.println("transcribtedText: " + transcribtedText);
-                    System.out.println();
-
-                } catch (TelegramApiException e) {
-                    log.error("Voice. Get and Download file. \n{}\nStack: {}", e.getMessage(), e.getStackTrace());
-                } catch (IOException e) {
-                    log.error("Voice. IOException. \n{}\nStack: {}", e.getMessage(), e.getStackTrace());
-                }
-
-                if (null != transcribtedText && !transcribtedText.isBlank()) {
-                    List<String> messages = translateOneTextToManyLanguages(transcribtedText);
-                    sendMessageForEachLanguage(chatId, messages);
-                }
-            }
+            commands.stream().filter(c -> c.isApplicable(update))
+                    .forEach(c -> c.process(this, update));
         }
     }
 
-    private List<String> translateOneTextToManyLanguages(String text) {
-        if (text == null || text.isBlank()) {
-            return new ArrayList<>();
-        }
-        return translatorService.translate(text);
-    }
-
-    private void sendMessageForEachLanguage(String chatId, List<String> messages) {
+    public void sendMessageForEachLanguage(String chatId, List<String> messages) {
         for (String translatedMessage: messages) {
             sendMessage(chatId, translatedMessage);
             if (!ownerId.equals(chatId)) {
