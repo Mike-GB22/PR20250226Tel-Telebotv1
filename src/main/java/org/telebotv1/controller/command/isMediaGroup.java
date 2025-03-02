@@ -12,23 +12,22 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class HasText implements Command {
+public class isMediaGroup implements Command {
 
     private final TranslatorService translatorService;
     private final SendService sendService;
 
     @Override
     public boolean isApplicable(Update update) {
-        return update.hasMessage() && update.getMessage().hasText();
+        return update.hasMessage() && null != update.getMessage().getMediaGroupId();
     }
 
     @Override
     public void process(Bot bot, Update update) {
         Message recivedMessage = update.getMessage();
         String chatId = recivedMessage.getChatId().toString();
-        //String userName = message.getFrom().toString();
 
-        List<String> messages = translatorService.translate(recivedMessage.getText());
-        sendService.sendMessageForEachLanguage(bot, chatId, messages);
+        List<String> messages = translatorService.translate(recivedMessage.getCaption());
+        sendService.sendPhotoForEachLanguage(bot, chatId, recivedMessage, messages);
     }
 }
