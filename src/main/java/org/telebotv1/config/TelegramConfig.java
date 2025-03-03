@@ -1,6 +1,7 @@
 package org.telebotv1.config;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,6 +13,9 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 @Getter
 @Configuration
 public class TelegramConfig {
+
+    @Setter
+    private Bot bot;
 
     @Value("${secrets.telegram.name:NOT_FOUND}")
     private String name;

@@ -1,2 +1,3 @@
 config:
-  xxx: "yyy"
+  telegram:
+    waiting_time_for_media_group_sec: 10

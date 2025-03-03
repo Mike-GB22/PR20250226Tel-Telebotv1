@@ -23,12 +23,12 @@ public class HasText implements Command {
     }
 
     @Override
-    public void process(Bot bot, Update update) {
+    public void process(Update update) {
         Message recivedMessage = update.getMessage();
         String chatId = recivedMessage.getChatId().toString();
         //String userName = message.getFrom().toString();
 
         List<String> messages = translatorService.translate(recivedMessage.getText());
-        sendService.sendMessageForEachLanguage(bot, chatId, messages);
+        sendService.sendMessageForEachLanguage(chatId, messages);
     }
 }

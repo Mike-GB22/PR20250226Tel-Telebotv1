@@ -19,15 +19,15 @@ public class HasVideo implements Command {
 
     @Override
     public boolean isApplicable(Update update) {
-        return update.hasMessage() && update.getMessage().hasVideo();
+        return update.hasMessage() && update.getMessage().getMediaGroupId() == null && update.getMessage().hasVideo();
     }
 
     @Override
-    public void process(Bot bot, Update update) {
+    public void process(Update update) {
         Message recivedMessage = update.getMessage();
         String chatId = recivedMessage.getChatId().toString();
 
         List<String> messages = translatorService.translate(recivedMessage.getCaption());
-        sendService.sendVideoForEachLanguage(bot, chatId, recivedMessage, messages);
+        sendService.sendVideoForEachLanguage(chatId, recivedMessage, messages);
     }
 }

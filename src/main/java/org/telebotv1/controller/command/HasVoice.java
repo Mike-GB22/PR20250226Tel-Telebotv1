@@ -3,6 +3,7 @@ package org.telebotv1.controller.command;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.telebotv1.config.TelegramConfig;
 import org.telebotv1.controller.Bot;
 import org.telebotv1.service.SendService;
 import org.telebotv1.service.TranslatorService;
@@ -22,6 +23,7 @@ public class HasVoice implements Command {
 
     private final TranslatorService translatorService;
     private final SendService sendService;
+    private final TelegramConfig telegramConfig;
 
     @Override
     public boolean isApplicable(Update update) {
@@ -29,7 +31,7 @@ public class HasVoice implements Command {
     }
 
     @Override
-    public void process(Bot bot, Update update) {
+    public void process(Update update) {
         Message recivedMessage = update.getMessage();
         String chatId = recivedMessage.getChatId().toString();
         Voice recievedVoice = update.getMessage().getVoice();
@@ -41,6 +43,7 @@ public class HasVoice implements Command {
         java.io.File audioFile;
         String transcribtedText = null;
         try {
+            Bot bot = telegramConfig.getBot();
             File voiceTeleFile = bot.execute(getVoiceFileRequest);
             audioFile = bot.downloadFile(voiceTeleFile.getFilePath());
             transcribtedText = translatorService.transcribe(audioFile);
@@ -50,7 +53,7 @@ public class HasVoice implements Command {
 
         if (null != transcribtedText && !transcribtedText.isBlank()) {
             List<String> messages = translatorService.translate(transcribtedText);
-            sendService.sendMessageForEachLanguage(bot, chatId, messages);
+            sendService.sendMessageForEachLanguage(chatId, messages);
         }
     }
 }
