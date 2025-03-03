@@ -19,15 +19,15 @@ public class HasPhoto implements Command {
 
     @Override
     public boolean isApplicable(Update update) {
-        return update.hasMessage() && update.getMessage().hasPhoto();
+        return update.hasMessage() && update.getMessage().getMediaGroupId() == null &&  update.getMessage().hasPhoto();
     }
 
     @Override
-    public void process(Bot bot, Update update) {
+    public void process(Update update) {
         Message recivedMessage = update.getMessage();
         String chatId = recivedMessage.getChatId().toString();
 
         List<String> messages = translatorService.translate(recivedMessage.getCaption());
-        sendService.sendPhotoForEachLanguage(bot, chatId, recivedMessage, messages);
+        sendService.sendPhotoForEachLanguage(chatId, recivedMessage, messages);
     }
 }

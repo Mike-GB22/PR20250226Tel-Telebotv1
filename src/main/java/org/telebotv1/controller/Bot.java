@@ -26,11 +26,11 @@ public class Bot extends TelegramLongPollingBot {
     public Bot (TelegramConfig telegramConfig,
                 List<Command> commands) {
         super(telegramConfig.getToken());
+        telegramConfig.setBot(this);
         this.commands = commands;
 
         botName = telegramConfig.getName();
         ownerId = telegramConfig.getOwnerId();
-
     }
 
     @Override
@@ -48,7 +48,7 @@ public class Bot extends TelegramLongPollingBot {
         log.info("\n (i) Was Update received: {}", update);
         if (update.hasMessage()) {
             commands.stream().filter(c -> c.isApplicable(update))
-                    .forEach(c -> c.process(this, update));
+                    .forEach(c -> c.process(update));
         }
     }
 }

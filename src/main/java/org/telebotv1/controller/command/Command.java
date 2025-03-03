@@ -6,5 +6,5 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 public interface Command {
     boolean isApplicable(Update update);
 
-    void process(Bot bot, Update update);
+    void process(Update update);
 }

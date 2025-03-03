@@ -25,61 +25,65 @@ import java.util.List;
 @Service
 public class SendService {
 
-    private String ownerId;
+    private final TelegramConfig telegramConfig;
+    private final String ownerId;
+
 
     public SendService(TelegramConfig telegramConfig) {
+        this.telegramConfig = telegramConfig;
         ownerId = telegramConfig.getOwnerId();
     }
 
-    public void sendMessageForEachLanguage(Bot bot, String chatId, List<String> messages) {
+    public void sendMessageForEachLanguage(String chatId, List<String> messages) {
         for (String translatedMessage: messages) {
-            sendMessage(bot, chatId, translatedMessage);
+            sendMessage(chatId, translatedMessage);
             if (!ownerId.equals(chatId)) {
-                sendMessage(bot, ownerId, String.format("User: %s%n%s", chatId, translatedMessage));
+                sendMessage(ownerId, String.format("User: %s%n%s", chatId, translatedMessage));
             }
         }
     }
 
-    public void sendPhotoForEachLanguage(Bot bot, String chatId, Message receivedMessage, List<String> messages) {
+    public void sendPhotoForEachLanguage(String chatId, Message receivedMessage, List<String> messages) {
         for (String translatedMessage: messages) {
-            sendPhoto(bot, chatId, receivedMessage, translatedMessage);
+            sendPhoto(chatId, receivedMessage, translatedMessage);
             if (!ownerId.equals(chatId)) {
-                sendPhoto(bot, ownerId, receivedMessage, String.format("User: %s%n%s", chatId, translatedMessage));
+                sendPhoto(ownerId, receivedMessage, String.format("User: %s%n%s", chatId, translatedMessage));
             }
         }
     }
 
-    public void sendVideoForEachLanguage(Bot bot, String chatId, Message receivedMessage, List<String> messages) {
+    public void sendVideoForEachLanguage(String chatId, Message receivedMessage, List<String> messages) {
         for (String translatedMessage: messages) {
-            sendVideo(bot, chatId, receivedMessage, translatedMessage);
+            sendVideo(chatId, receivedMessage, translatedMessage);
             if (!ownerId.equals(chatId)) {
-                sendVideo(bot, ownerId, receivedMessage, String.format("User: %s%n%s", chatId, translatedMessage));
+                sendVideo(ownerId, receivedMessage, String.format("User: %s%n%s", chatId, translatedMessage));
             }
         }
     }
 
-    private void sendMediaGroupForEachLanguage(Bot bot, String chatId, Message receivedMessage, List<String> messages) {
+    public void sendMediaGroupForEachLanguage(String chatId, List<InputMedia> media, List<String> messages) {
         for (String translatedMessage: messages) {
-            sendMediaGroup(bot, chatId, receivedMessage, translatedMessage);
+            sendMediaGroup(chatId, media, translatedMessage);
             if (!ownerId.equals(chatId)) {
-                sendMediaGroup(bot, ownerId, receivedMessage, String.format("User: %s%n%s", chatId, translatedMessage));
+                sendMediaGroup(ownerId, media, String.format("User: %s%n%s", chatId, translatedMessage));
             }
         }
     }
 
-    private void sendMessage(Bot bot, String chatId, String text) {
+
+    public void sendMessage(String chatId, String text) {
         SendMessage newTextMessage = new SendMessage();
         newTextMessage.setChatId(chatId);
         newTextMessage.enableMarkdown(true);
         newTextMessage.setText(text);
         try {
-            bot.execute(newTextMessage);
+            telegramConfig.getBot().execute(newTextMessage);
         } catch (TelegramApiException e) {
             log.error("Error: {}, stack {}", e.getMessage(), e.getStackTrace());
         }
     }
 
-    private void sendPhoto(Bot bot, String chatId, Message receivedMessage, String text) {
+    private void sendPhoto(String chatId, Message receivedMessage, String text) {
         List<PhotoSize> photoSizes = receivedMessage.getPhoto();
 
         SendPhoto newPhotoMessage = new SendPhoto();
@@ -90,13 +94,13 @@ public class SendService {
         newPhotoMessage.setPhoto(new InputFile(fileId));
 
         try {
-            bot.execute(newPhotoMessage);
+            telegramConfig.getBot().execute(newPhotoMessage);
         } catch (TelegramApiException e) {
             log.error("Error: {}, stack {}", e.getMessage(), e.getStackTrace());
         }
     }
 
-    private void sendVideo(Bot bot, String chatId, Message receivedMessage, String text) {
+    private void sendVideo(String chatId, Message receivedMessage, String text) {
         SendVideo newVideoMessage = new SendVideo();
         newVideoMessage.setChatId(chatId);
         newVideoMessage.setCaption(text);
@@ -105,44 +109,24 @@ public class SendService {
         newVideoMessage.setVideo(new InputFile(fileId));
 
         try {
-            bot.execute(newVideoMessage);
+            telegramConfig.getBot().execute(newVideoMessage);
         } catch (TelegramApiException e) {
             log.error("Error: {}, stack {}", e.getMessage(), e.getStackTrace());
         }
     }
 
-    private void sendMediaGroup(Bot bot, String chatId, Message receivedMessage, String text) {
-        List<InputMedia> mediaList = new ArrayList<>();
-        if (receivedMessage.hasPhoto()) {
-            List<PhotoSize> photos = receivedMessage.getPhoto();
-            int countOfPhotos = photos.size();
+    public void sendMediaGroup(String chatId, List<InputMedia> media, String text) {
+        if (!media.isEmpty()) {
+            SendMediaGroup newMediaMessage = new SendMediaGroup();
+            newMediaMessage.setChatId(chatId);
+            media.get(0).setCaption(text);
+            newMediaMessage.setMedias(media);
 
-            for (int i = 0; i < countOfPhotos; i++) {
-                String fileId = photos.get(i).getFileId();
-                System.out.println(i + " --> " + fileId);
-                InputMediaPhoto inputMediaPhoto = new InputMediaPhoto(fileId);
-                mediaList.add(inputMediaPhoto);
+            try {
+                telegramConfig.getBot().execute(newMediaMessage);
+            } catch (TelegramApiException e) {
+                log.error("Error: {}, stack {}", e.getMessage(), e.getStackTrace());
             }
-        }
-
-        if (receivedMessage.hasVideo()) {
-            Video video = receivedMessage.getVideo();
-            InputMediaVideo inputMediaVideo = new InputMediaVideo(video.getFileId());
-            mediaList.add(inputMediaVideo);
-        }
-
-        SendMediaGroup newMediaMessage = new SendMediaGroup();
-        newMediaMessage.setChatId(chatId);
-        if (!mediaList.isEmpty()) {
-            mediaList.get(0).setCaption(text);
-        }
-        mediaList = mediaList.stream().limit(10).toList();
-        newMediaMessage.setMedias(mediaList);
-
-        try {
-            bot.execute(newMediaMessage);
-        } catch (TelegramApiException e) {
-            log.error("Error: {}, stack {}", e.getMessage(), e.getStackTrace());
         }
     }
 }

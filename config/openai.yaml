@@ -12,11 +12,11 @@ config:
         - Russian
         - English
         - German
-        - Spanish
-        - Italian
-        - Arabic
-        - Serbian
-        - Ukrainian
+        #- Spanish
+        #- Italian
+        #- Arabic
+        #- Serbian
+        #- Ukrainian
       default_language: "Russian"
     voice:
       endpoint: https://api.openai.com/v1/audio/transcriptions
