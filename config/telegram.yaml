@@ -1,3 +1,4 @@
 config:
   telegram:
     waiting_time_for_media_group_sec: 10
+    all_clients_are_allowed: false
