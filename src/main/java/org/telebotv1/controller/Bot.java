@@ -11,6 +11,7 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 
 import org.telegram.telegrambots.meta.api.objects.Update;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -22,6 +23,8 @@ public class Bot extends TelegramLongPollingBot {
     private final String botName;
     @Getter
     private final String ownerId;
+    private final boolean allClientsAllowed;
+    private final List<String> allowedClients;
 
     public Bot (TelegramConfig telegramConfig,
                 List<Command> commands) {
@@ -31,6 +34,12 @@ public class Bot extends TelegramLongPollingBot {
 
         botName = telegramConfig.getName();
         ownerId = telegramConfig.getOwnerId();
+        allClientsAllowed = telegramConfig.isAllClientsAllowed();
+        if (allClientsAllowed) {
+            allowedClients = new ArrayList<>();
+        } else {
+            allowedClients = telegramConfig.getAllowedClients();
+        }
     }
 
     @Override
@@ -47,8 +56,21 @@ public class Bot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         log.info("\n (i) Was Update received: {}", update);
         if (update.hasMessage()) {
-            commands.stream().filter(c -> c.isApplicable(update))
-                    .forEach(c -> c.process(update));
+            String chatId = update.getMessage().getChatId().toString();
+
+            if (isClientAllowed(chatId)) {
+                commands.stream().filter(c -> c.isApplicable(update))
+                        .forEach(c -> c.process(update));
+            } else {
+                log.warn("\n  (w) Client: {} is not allowed!", chatId);
+            }
+        } else {
+            log.warn("\n  (w) Update has not Message!");
         }
+    }
+
+    private boolean isClientAllowed(String chatId) {
+        return allClientsAllowed
+                || (null != allowedClients && allowedClients.contains(chatId));
     }
 }
